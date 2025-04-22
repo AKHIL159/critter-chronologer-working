@@ -1,6 +1,5 @@
 package com.udacity.jdnd.course3.critter.user;
 
-
 import com.udacity.jdnd.course3.critter.pet.Pet;
 import com.udacity.jdnd.course3.critter.pet.PetRepository;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -9,7 +8,6 @@ import org.springframework.stereotype.Service;
 import java.time.DayOfWeek;
 import java.util.List;
 import java.util.Set;
-import java.util.stream.Collectors;
 
 @Service
 public class UserService {
@@ -23,121 +21,42 @@ public class UserService {
     @Autowired
     private PetRepository petRepository;
 
-    public CustomerDTO saveCustomer(CustomerDTO dto) {
-        Customer customer = new Customer();
-        customer.setName(dto.getName());
-        customer.setPhoneNumber(dto.getPhoneNumber());
-        customer.setNotes(dto.getNotes());
-
-        Customer savedCustomer = customerRepository.save(customer);
-        return convertToDTO(savedCustomer);
+    public Customer saveCustomer(Customer customer) {
+        return customerRepository.save(customer);
     }
 
-    private CustomerDTO convertToDTO(Customer customer) {
-        CustomerDTO dto = new CustomerDTO();
-        dto.setId(customer.getId());
-        dto.setName(customer.getName());
-        dto.setPhoneNumber(customer.getPhoneNumber());
-        dto.setNotes(customer.getNotes());
-
-        if (customer.getPets() != null) {
-            dto.setPetIds(
-                    customer.getPets()
-                            .stream()
-                            .map(pet -> pet.getId())
-                            .collect(Collectors.toList())
-            );
-        }
-
-        return dto;
+    public List<Customer> getAllCustomers() {
+        return customerRepository.findAll();
     }
 
-    public List<CustomerDTO> getAllCustomers() {
-        return customerRepository.findAll()
-                .stream()
-                .map(this::convertToDTO)
-                .collect(Collectors.toList());
+    public Customer getOwnerByPetId(Long petId) {
+        Pet pet = petRepository.findById(petId).orElse(null);
+        return (pet != null) ? pet.getOwner() : null;
     }
 
-    public EmployeeDTO addNewEmployee(EmployeeDTO dto) {
-        Employee employee = new Employee();
-        employee.setName(dto.getName());
-        employee.setSkills(dto.getSkills());
-        employee.setDaysAvailable(dto.getDaysAvailable());
-
-        Employee stored = employeeRepository.save(employee);
-
-        EmployeeDTO result = new EmployeeDTO();
-        result.setId(stored.getId());
-        result.setName(stored.getName());
-        result.setSkills(stored.getSkills());
-        result.setDaysAvailable(stored.getDaysAvailable());
-        return result;
+    public Employee addNewEmployee(Employee employee) {
+        return employeeRepository.save(employee);
     }
 
-    public EmployeeDTO getEmployeeById(Long id) {
-        Employee employee = employeeRepository.findById(id).orElse(null);
-        if (employee == null) {
-            return null; // Or throw an exception depending on your preference
-        }
-
-        EmployeeDTO dto = new EmployeeDTO();
-        dto.setId(employee.getId());
-        dto.setName(employee.getName());
-        dto.setSkills(employee.getSkills());
-        dto.setDaysAvailable(employee.getDaysAvailable());
-
-        return dto;
+    public Employee getEmployeeById(Long employeeId) {
+        return employeeRepository.findById(employeeId).orElse(null);
     }
 
-    public void updateAvailability(Long employeeId, Set<DayOfWeek> availableDays) {
+    public void updateAvailability(Long employeeId, Set<DayOfWeek> daysAvailable) {
         Employee employee = employeeRepository.findById(employeeId).orElse(null);
         if (employee != null) {
-            employee.setDaysAvailable(availableDays);
+            employee.setDaysAvailable(daysAvailable);
             employeeRepository.save(employee);
         }
     }
 
-    public List<EmployeeDTO> findMatchingEmployees(EmployeeRequestDTO request) {
-        Set<DayOfWeek> targetDay = Set.of(request.getDate().getDayOfWeek());
+    public List<Employee> findMatchingEmployees(EmployeeRequestDTO request) {
+        List<Employee> availableEmployees = employeeRepository.findAll()
+                .stream()
+                .filter(e -> e.getDaysAvailable().contains(request.getDate().getDayOfWeek()))
+                .filter(e -> e.getSkills().containsAll(request.getSkills()))
+                .toList();
 
-        return employeeRepository.findAll().stream()
-                .filter(emp -> emp.getDaysAvailable() != null &&
-                        emp.getDaysAvailable().containsAll(targetDay))
-                .filter(emp -> emp.getSkills() != null &&
-                        emp.getSkills().containsAll(request.getSkills()))
-                .map(emp -> {
-                    EmployeeDTO dto = new EmployeeDTO();
-                    dto.setId(emp.getId());
-                    dto.setName(emp.getName());
-                    dto.setSkills(emp.getSkills());
-                    dto.setDaysAvailable(emp.getDaysAvailable());
-                    return dto;
-                })
-                .collect(Collectors.toList());
+        return availableEmployees;
     }
-
-    public CustomerDTO getOwnerByPetId(long petId) {
-        Pet pet = petRepository.findById(petId).orElse(null);
-        if (pet == null || pet.getOwner() == null) return null;
-
-        Customer owner = pet.getOwner();
-
-        CustomerDTO dto = new CustomerDTO();
-        dto.setId(owner.getId());
-        dto.setName(owner.getName());
-        dto.setPhoneNumber(owner.getPhoneNumber());
-        dto.setNotes(owner.getNotes());
-
-        if (owner.getPets() != null) {
-            dto.setPetIds(owner.getPets()
-                    .stream()
-                    .map(p -> p.getId())
-                    .collect(Collectors.toList()));
-        }
-
-        return dto;
-    }
-
-
 }
