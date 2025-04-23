@@ -1,0 +1,41 @@
+<!-- REMOVE this if it exists -->
+<dependency>
+    <groupId>mysql</groupId>
+    <artifactId>mysql-connector-java</artifactId>
+</dependency>
+
+<!-- ADD this -->
+<dependency>
+    <groupId>org.postgresql</groupId>
+    <artifactId>postgresql</artifactId>
+    <scope>runtime</scope>
+</dependency>
+
+---------------------------------------------------
+
+# PostgreSQL database connection
+spring.datasource.url=jdbc:postgresql://localhost:5432/critter
+spring.datasource.username=postgres
+spring.datasource.password=your_password
+
+spring.datasource.driver-class-name=org.postgresql.Driver
+spring.jpa.database-platform=org.hibernate.dialect.PostgreSQLDialect
+
+spring.jpa.hibernate.ddl-auto=update
+spring.jpa.show-sql=true
+spring.jpa.defer-datasource-initialization=true
+
+server.port=8082
+
+----------------------------------------------------------------
+
+
+ Make sure:
+
+PostgreSQL is running on port 5432
+
+You have a database named critter created:
+
+createdb critter
+
+----------------------------------------------------------------
